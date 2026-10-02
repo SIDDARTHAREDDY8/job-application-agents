@@ -193,3 +193,12 @@ you paste job posts
 - **Start over safely** → every real run is preceded by `--dry-run`. Drafts cost nothing.
 
 Keys live only in `.env` (never uploaded to GitHub). Your personal details live only in `config/candidate.yaml` (never uploaded either).
+
+## Developers
+
+Run the test suite (no API keys needed — the tests use a fake brain):
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -q
+```

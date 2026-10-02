@@ -108,9 +108,6 @@ def llm_map_fields(llm, fields: list[dict[str, Any]], candidate: dict[str, Any])
         m = re.search(r"\{.*\}", reply, re.DOTALL)
         data = json.loads(m.group(0)) if m else {"mappings": []}
     mappings = data.get("mappings", []) if isinstance(data, dict) else []
-    # keep only mappings that reference a real field
-    valid_keys = {(f.get("name") or f.get("id") or f.get("label")) for f in fields}
-    valid_keys |= {f.get("selector") for f in fields}
     out = []
     for m in mappings:
         if isinstance(m, dict) and m.get("key") and "value" in m:

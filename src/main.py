@@ -26,6 +26,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 import yaml
 
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _resolve(path: str) -> str:
+    """Resolve user-supplied paths relative to the repo root, so the CLI works
+    from any working directory (cron, Task Scheduler, etc.)."""
+    if not path:
+        return path
+    return path if os.path.isabs(path) else os.path.join(REPO_ROOT, path)
+
 
 def load_candidate(path: str) -> dict:
     if not os.path.exists(path):
@@ -101,7 +111,13 @@ def cmd_search_board(args, candidate, llm):
             print(f"If not logged in, log in at {login} in the opened browser, "
                   f"then press Enter here.")
             input()
-        jobs = adapter.search_jobs(driver, args.query, args.location or "")
+        try:
+            jobs = adapter.search_jobs(driver, args.query, args.location or "")
+        except NotImplementedError:
+            print(f"The '{adapter.name}' adapter doesn't support search; "
+                  f"it only handles apply URLs.")
+            print(f"Searchable boards: linkedin, indeed, dice, ziprecruiter, glassdoor.")
+            sys.exit(1)
     print(f"Found {len(jobs)} jobs on {adapter.name}:")
     for j in jobs:
         print(f"- {j['role']} @ {j['company']}  {j['source_url']}")
@@ -130,7 +146,11 @@ def main() -> None:
     args = ap.parse_args()
 
     llm = build_llm()
-    candidate = load_candidate(args.candidate)
+    candidate = load_candidate(_resolve(args.candidate))
+    args.input = _resolve(args.input)
+    args.state = _resolve(args.state)
+    if args.resume:
+        args.resume = _resolve(args.resume)
 
     if args.search_board:
         cmd_search_board(args, candidate, llm)

@@ -47,7 +47,9 @@ class OutreachAgent(BaseAgent):
         )
         reply = self._ask(SYSTEM, user, temperature=0.7)
         data = self._extract_json(reply)
-        # plain-text guard: strip any accidental markdown
-        data["body"] = data.get("body", "").strip()
-        data["subject"] = data.get("subject", "").strip()
+        if not isinstance(data, dict):
+            data = {}
+        # plain-text guard: strip any accidental markdown; tolerate missing keys
+        data["body"] = str(data.get("body", "")).strip()
+        data["subject"] = str(data.get("subject", "")).strip()
         return data

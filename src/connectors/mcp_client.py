@@ -41,7 +41,7 @@ class MCPClient:
         self.env = env
         self.url = url
         self._session = None
-        self._cm = None  # exit-stack context manager holder
+        self._stack = None
 
     # ------------------------------------------------------------------ config
     @classmethod
