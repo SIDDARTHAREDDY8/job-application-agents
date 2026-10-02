@@ -91,6 +91,36 @@ python -m src.main --search-board linkedin --query "AI Engineer" --headed
 
 A real browser window opens. **Log in yourself**, then press Enter in the terminal. The login is saved on your computer, so future runs can work without showing the browser. Repeat once per website.
 
+### Step 6 (optional): Put it on autopilot — the cron job
+
+Tired of running it by hand? A cron job is an alarm clock for your computer: it runs the robots for you on a schedule.
+
+**1. Install the schedule** (default: every day at 9:30 AM, in safe dry-run mode):
+
+```bash
+./scripts/install_cron.sh
+```
+
+This creates `state/input.txt` for you. **Paste your real job posts into that file** — the cron job reads it every run.
+
+**2. When the drafts look good, switch it to live** (actually applies):
+
+```bash
+./scripts/install_cron.sh --live --resume resume.pdf --time 09:30
+```
+
+Other useful options: `--time 18:00` (run at 6 PM), `--max-jobs 10` (up to 10 jobs per run).
+
+Every run appends results to `state/applications.json` (never applies twice to the same job) and logs to `state/logs/`.
+
+**Check / remove it:**
+```bash
+crontab -l                    # see the installed schedule
+./scripts/uninstall_cron.sh   # remove it
+```
+
+**On Windows:** open Task Scheduler → Create Basic Task → set it to run daily, with the action `python -m src.main --input state/input.txt` starting in the project folder.
+
 ---
 
 ## Running the robots
