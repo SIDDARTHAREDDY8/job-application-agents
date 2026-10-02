@@ -1,0 +1,15 @@
+Acme Robotics is hiring a Founding AI Engineer (remote US).
+We are building vision-based picking robots for warehouses. The stack is Python, PyTorch,
+ROS 2, and FastAPI. You will own the perception pipeline end to end.
+
+Contact: Jane Doe, CTO - jane@acmerobotics.example.com
+Source: https://acmerobotics.example.com/careers/founding-ai-engineer
+
+---
+
+BetaML (YC W26) is hiring an ML Platform Engineer, San Francisco / remote.
+We run inference for 500k requests/day on Kubernetes. Looking for someone with
+Python, Kubernetes, and LLM serving experience (vLLM / TensorRT-LLM).
+
+Apply: jobs@betaml.example.com
+Source: YC jobs board

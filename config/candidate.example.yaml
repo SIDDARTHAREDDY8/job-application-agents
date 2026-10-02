@@ -1,0 +1,33 @@
+# Copy to candidate.yaml and fill in YOUR details.
+# The agents never invent facts - everything they write traces back to this file.
+name: "Your Name"
+email: "you@example.com"
+phone: "+1-555-010-0000"
+linkedin: "https://linkedin.com/in/your-handle"
+github: "https://github.com/your-handle"
+portfolio: "https://your-site.com"
+location: "City, ST"
+work_preference: "Remote US; open to relocation anywhere in the US"
+summary: "One-line summary, e.g. MS CS @ University (2026), 3 years shipping production AI systems."
+target_roles:
+  - "AI/ML Engineer"
+  - "Backend Engineer"
+  - "Founding Engineer"
+skills:
+  - "Python"
+  - "TypeScript"
+  - "PyTorch"
+  - "FastAPI"
+  - "PostgreSQL"
+experience:
+  - company: "Example Corp"
+    title: "Software Engineer"
+    dates: "Jan 2023 - Present"
+    bullets:
+      - "Shipped RAG support agent serving 10k queries/day; cut p95 latency 40%."
+      - "Built ETL pipeline moving 2TB/day with data-quality checks."
+  - company: "Startup XYZ"
+    title: "Founding Engineer Intern"
+    dates: "Jun 2022 - Dec 2022"
+    bullets:
+      - "Prototyped realtime dashboard in React + WebSockets."
