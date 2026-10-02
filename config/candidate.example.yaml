@@ -31,3 +31,17 @@ experience:
     dates: "Jun 2022 - Dec 2022"
     bullets:
       - "Prototyped realtime dashboard in React + WebSockets."
+
+# Form answers the LLM uses to fill application forms (ATS + boards).
+# Only fields present here get filled; anything missing is left blank, never guessed.
+form_answers:
+  address: "123 Main St, City, ST 00000"
+  work_authorization: "Authorized to work in the US"
+  sponsorship_now: "No"
+  sponsorship_future: "No"
+  years_python: "3"
+  start_date: "Immediately"
+  salary_expectation: "Negotiable"
+  willing_to_relocate: "Yes"
+  veteran: "No"
+  disability: "No"
