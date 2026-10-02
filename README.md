@@ -1,254 +1,165 @@
-# Job-Application Agents (LLM-agnostic)
+# Job-Application Agents
 
-Autonomous agents that take a job hunt from signal to submitted application:
+Think of this like a small robot team that hunts jobs for you. You give the robots a brain (any AI model you like), and they find job posts, rewrite your resume for each one, and apply — by email or straight on job websites.
 
-1. **Sourcer** — extracts structured job leads from raw text (HN hiring threads, X posts, career pages, VC boards)
-2. **Tailor** — rewrites your resume bullets to mirror each JD (never invents facts)
-3. **Outreach** — drafts a short, problem-first application email (not a cover letter)
-4. **ApplyAgent** — actually submits: sends via **Gmail** (resume attached) or drives **Playwright** through job boards and ATS forms
-5. **Coordinator** — runs source → dedupe → tailor → draft → apply, with JSON state
-
-Any LLM can drive them: OpenAI, Anthropic, Gemini, Ollama, OpenRouter, Groq, Together, DeepSeek, Mistral, LM Studio, or any OpenAI-compatible endpoint. Runs on any computer: everything is `pip install` + `.env`.
+No single company is required. Any brain, any computer.
 
 ---
 
-## 1. Setup
+## Parts list (what you need)
+
+- **Python 3.10+** on your computer
+- **A brain** — an AI model. Free local option works, paid keys work too
+- **Gmail** *(optional)* — only if you want the robots to send emails
+- **A browser** *(optional)* — only if you want the robots to apply on job websites
+
+---
+
+## Assembly — 5 simple steps
+
+### Step 1: Get the parts
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/job-application-agents.git
 cd job-application-agents
 pip install -r requirements.txt
-playwright install chromium        # only needed for the board-apply route
-
-cp .env.example .env
-cp config/candidate.example.yaml config/candidate.yaml
 ```
 
-Edit `config/candidate.yaml` with **your** details (including `form_answers` for application forms). The agents never invent facts — everything they write traces back to this file.
-
-## 2. Connect an LLM
-
-All LLM config lives in `.env`. Pick **one** provider:
-
-| Provider | `.env` settings |
-|---|---|
-| **OpenAI** | `LLM_PROVIDER=openai` + `LLM_API_KEY=sk-...` |
-| **Anthropic** | `LLM_PROVIDER=anthropic` + `LLM_API_KEY=sk-ant-...` |
-| **Gemini** | `LLM_PROVIDER=gemini` + `LLM_API_KEY=...` (from Google AI Studio) |
-| **Ollama** (local, free) | `LLM_PROVIDER=ollama` (no key needed). Optional: `LLM_MODEL=llama3.1:8b`, `LLM_BASE_URL=http://localhost:11434/v1` |
-| **OpenRouter** | `LLM_PROVIDER=openrouter` + `LLM_API_KEY=...` |
-| **Groq** | `LLM_PROVIDER=groq` + `LLM_API_KEY=gsk_...` |
-| **Together** | `LLM_PROVIDER=together` + `LLM_API_KEY=...` |
-| **LM Studio** (local) | `LLM_PROVIDER=lmstudio` (no key; start the server first) |
-| **Any OpenAI-compatible API** | `LLM_PROVIDER=custom` + `LLM_BASE_URL=https://...` + `LLM_API_KEY=...` |
-
-Optional overrides (any provider):
-
-```bash
-LLM_MODEL=gpt-4o-mini        # default per provider if omitted
-LLM_TEMPERATURE=0.7
-LLM_MAX_TOKENS=2000
-```
-
-### Quick examples
-
-**Ollama (local, no API key):**
-```bash
-ollama pull llama3.1:8b
-# .env:
-LLM_PROVIDER=ollama
-LLM_MODEL=llama3.1:8b
-```
-
-**Anthropic:**
-```bash
-# .env:
-LLM_PROVIDER=anthropic
-LLM_API_KEY=sk-ant-your-key
-LLM_MODEL=claude-sonnet-4-20250514
-```
-
-**OpenRouter (many models, one key):**
-```bash
-# .env:
-LLM_PROVIDER=openrouter
-LLM_API_KEY=sk-or-your-key
-LLM_MODEL=openai/gpt-4o-mini
-```
-
-### Switching models in code
-
-```python
-from src.llm import create
-
-llm = create(provider="anthropic", model="claude-sonnet-4-20250514", api_key="sk-ant-...")
-# or: llm = create(provider="ollama", model="llama3.1:8b")
-# or: llm = create(provider="custom", model="my-model",
-#                 base_url="https://my-endpoint/v1", api_key="...")
-```
-
-## 3. Run (draft mode — safe)
-
-```bash
-python -m src.main --input examples/sample_signal.txt --dry-run
-```
-
-This runs source → dedupe → tailor → draft and prints the results. It sends nothing, submits nothing, writes no state.
-
-## 4. Connect Gmail (email-apply route)
-
-Jobs with a contact email are applied to by email, resume attached. Two modes:
-
-**SMTP (simplest):**
-```bash
-# .env:
-GMAIL_MODE=smtp
-GMAIL_ADDRESS=you@gmail.com
-GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-```
-Create the app password at Google Account → Security → 2-Step Verification → App passwords.
-
-**Gmail API (OAuth):**
-```bash
-# .env:
-GMAIL_MODE=api
-GMAIL_ADDRESS=you@gmail.com
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-```
-(Get these at Google Cloud → APIs & Services → Credentials → OAuth client ID, Desktop app. Enable the Gmail API.) First run opens a browser to authorize; the token is cached in `state/gmail_token.json`.
-
-## 5. Connect the browser (board-apply route)
-
-Job-board and ATS applications are driven with Playwright:
+If you want website applying later, also run:
 
 ```bash
 playwright install chromium
 ```
 
-**First run — log in once:**
+### Step 2: Tell the robots who you are
+
+```bash
+cp config/candidate.example.yaml config/candidate.yaml
+```
+
+Open `config/candidate.yaml` in any text editor and fill in your name, skills, jobs, and how you answer application forms. **This file is the single source of truth** — the robots never invent facts, everything they write comes from here. It stays on your computer and is never uploaded.
+
+### Step 3: Plug in a brain (pick ONE)
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set two lines. Easiest first:
+
+**Free, runs on your own computer (Ollama):**
+```bash
+# 1) install ollama from https://ollama.com, then: ollama pull llama3.1:8b
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.1:8b
+```
+
+**Or OpenAI:**
+```bash
+LLM_PROVIDER=openai
+LLM_API_KEY=sk-your-key-here
+```
+
+**Or Anthropic:**
+```bash
+LLM_PROVIDER=anthropic
+LLM_API_KEY=sk-ant-your-key-here
+```
+
+More options (Gemini, Groq, Together, OpenRouter, LM Studio, or any custom server) are listed with examples in `.env.example`. Switching brains later = changing these two lines. Nothing else changes.
+
+### Step 4 (optional): Plug in Gmail
+
+Only needed if you want robots to send application emails.
+
+```bash
+# in .env:
+GMAIL_MODE=smtp
+GMAIL_ADDRESS=you@gmail.com
+GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
+```
+
+Get the app password at: Google Account → Security → 2-Step Verification → App passwords. (Safer than your real password, and you can revoke it anytime.)
+
+### Step 5 (optional): Teach the robots your logins
+
+Only needed if you want robots to apply on job websites (LinkedIn, Indeed, Dice, …).
+
 ```bash
 python -m src.main --search-board linkedin --query "AI Engineer" --headed
 ```
-A browser window opens. Log in to the board manually, then press Enter in the terminal. The session persists in `state/browser_profile/` — later runs are headless and stay logged in. Repeat for each board you use (Indeed, Dice, ZipRecruiter, Glassdoor).
 
-**Search a board directly:**
+A real browser window opens. **Log in yourself**, then press Enter in the terminal. The login is saved on your computer, so future runs can work without showing the browser. Repeat once per website.
+
+---
+
+## Running the robots
+
+**Test run — safe, changes nothing, sends nothing:**
 ```bash
-python -m src.main --search-board linkedin --query "AI Engineer" --location "Remote"
-python -m src.main --search-board indeed --query "ML Platform Engineer" --location "New York"
+python -m src.main --input examples/sample_signal.txt --dry-run
 ```
 
-**Full apply run (actually submits):**
+**Real run — actually applies (needs Step 4 and/or 5 done):**
 ```bash
-python -m src.main --input my_signals.txt --max-jobs 5 --resume resume.pdf --board-apply
+python -m src.main --input my_jobs.txt --max-jobs 5 --resume resume.pdf --board-apply
 ```
 
-How a board apply works: the agent opens the job page, extracts every form field (with labels), asks your LLM to map your `candidate.yaml` data onto the fields, fills them, uploads your resume, clicks submit — and counts the application **only** if a confirmation marker ("application received", "thank you for applying", …) appears on the page. CAPTCHAs and OTP screens abort the item with a note instead of being retried.
-
-Supported boards/ATS: `greenhouse`, `lever`, `ashby`, `workable` (single-page ATS forms) and `linkedin`, `indeed`, `dice`, `ziprecruiter`, `glassdoor` (guided multi-step flows). Board selectors change over time — treat the classic-board adapters as best-effort and check the screenshot in `state/` when something looks off.
-
-## 6. MCP connections
-
-Any MCP server can be plugged in alongside (or instead of) the built-ins:
-
+**Search a job website directly:**
 ```bash
-# .env:
-MCP_SERVERS={"playwright": {"command": "npx", "args": ["-y", "@playwright/mcp@latest"]}}
+python -m src.main --search-board indeed --query "ML Engineer" --location "Remote"
 ```
 
-```python
-from src.connectors import MCPClient
+Where do job posts come from? You paste them into a text file — a Hacker News hiring thread, founder posts, career pages, anything. The Sourcer robot (below) turns that mess into neat job cards.
 
-client = MCPClient.from_env("playwright")
-print(client.describe_sync())          # what tools the server offers
-client.call_tool_sync("browser_navigate", {"url": "https://example.com"})
-```
+---
 
-SSE servers work too: `{"mytools": {"url": "http://localhost:8000/sse"}}`.
+## The robots — what each one does
 
-## 7. Use agents individually
+**1. Sourcer — the scout.**
+Reads messy text (job posts you pasted) and writes neat job cards: company, role, location, the full job description, and the contact email if the post has one. Skips anything you've already touched.
 
-```python
-from dotenv import load_dotenv
-load_dotenv()
-import yaml
-from src.llm import from_env
-from src.agents import SourcerAgent, TailorAgent, OutreachAgent, ApplyAgent
-from src.connectors.gmail import from_env as gmail_from_env
-from src.browser import PlaywrightManager
+**2. Tailor — the resume writer.**
+Takes one job description and rewrites your resume bullets to speak that job's language. It may reword, but it never invents — every fact comes from your `candidate.yaml`.
 
-llm = from_env()  # reads .env
-candidate = yaml.safe_load(open("config/candidate.yaml"))
+**3. Outreach — the email writer.**
+Writes a short application email (80–150 words). It opens with something specific about the company, ties one of your real achievements to their job, and ends with one simple ask. Not a boring cover letter.
 
-jobs = SourcerAgent(llm, candidate).extract(open("my_signals.txt").read())["jobs"]
-tailored = TailorAgent(llm, candidate).tailor(jobs[0]["jd_text"])
-email = OutreachAgent(llm, candidate).draft(jobs[0], tailored)
+**4. ApplyAgent — the hands.**
+The only robot that touches the outside world. For each job it picks a route:
+- *Has a contact email?* → sends the email through your Gmail with your resume attached. Counts as done only when Gmail confirms it sent.
+- *Has a job-website link?* → opens the page in the browser, reads every field on the application form, asks the brain what to type where, uploads your resume, clicks submit. Counts as done only when the page says "application received" (or similar).
+- *Neither?* → marks it "needs you" and moves on. It never guesses or fakes a submission.
 
-with PlaywrightManager(headless=True) as driver:
-    applier = ApplyAgent(llm, candidate, driver=driver, gmail=gmail_from_env())
-    result = applier.apply(jobs[0], tailored, resume_path="resume.pdf", dry_run=False)
-print(result["status"], result.get("note"))
-```
+If it hits a CAPTCHA or a phone-code screen, it stops that job and tells you — it never tries to sneak past human checks.
 
-## 8. How it works
+**5. Coordinator — the manager.**
+Runs the whole team in order: scout → dedupe (skip jobs you already applied to) → tailor → draft email → apply. Remembers everything in `state/applications.json` so the next run never repeats work.
 
 ```
-raw hiring signals (you collect: HN, X posts, career pages, board searches)
-        |
-   SourcerAgent  ->  {company, role, jd_text, contact_email, apply_url, ...}  (JSON only)
-        |
-   dedupe vs state/applications.json (company+role, email)
-        |
-   TailorAgent   ->  resume bullets reworded for the JD (facts unchanged)
-        |
-   OutreachAgent ->  {subject, body}  80-150 words, problem-first (always drafted)
-        |
-   ApplyAgent --- contact_email? ---> GmailSender -> send + receipt
-        |                                    (applied only with a message id)
-        +--- board/ATS URL? ---> Playwright -> fill via LLM -> upload resume
-                                 -> submit -> confirmation marker?
-                                                (applied only if seen)
-        |
-   state/applications.json  (dry-run writes nothing)
+you paste job posts
+        ↓
+   [Sourcer] makes neat job cards
+        ↓
+   [Coordinator] skips jobs you already did
+        ↓
+   [Tailor] rewrites your resume per job
+        ↓
+   [Outreach] drafts the email
+        ↓
+   [ApplyAgent] sends it or applies on the website
+        ↓
+   saved to state/applications.json — never applied twice
 ```
 
-Rules the machine enforces: dry-run is the default; a send counts only with a provider receipt; a board submit counts only with an on-page confirmation; CAPTCHA/OTP aborts the item; nothing is ever retried blindly.
+---
 
-## 9. Project layout
+## If something breaks
 
-```
-src/
-  llm/
-    base.py        # LLMClient interface
-    factory.py     # create() / from_env() - the "connect any LLM" entry point
-    providers.py   # OpenAI-compatible, Anthropic, Gemini implementations
-  agents/
-    sourcer.py     # extract structured jobs from raw text
-    tailor.py      # JD-tailored resume bullets
-    outreach.py    # problem-first application email
-    apply.py       # ApplyAgent: routes email vs board, verifies everything
-    coordinator.py # end-to-end run + dedupe + state
-  connectors/
-    gmail.py       # GmailSender: SMTP (app password) or Gmail API (OAuth)
-    mcp_client.py  # MCPClient: plug any MCP server into the agents
-  browser/
-    playwright_driver.py  # PlaywrightManager: persistent session, form extraction
-  boards/
-    base.py        # BoardAdapter + shared ATS / guided-apply flows
-    registry.py    # get_adapter(url) -> adapter
-    greenhouse.py lever.py ashby.py workable.py      # ATS adapters
-    linkedin.py indeed.py dice.py ziprecruiter.py glassdoor.py  # board adapters
-  main.py          # CLI
-config/
-  candidate.example.yaml   # your facts + form_answers (copy to candidate.yaml)
-examples/
-  sample_signal.txt
-```
+- **"No brain connected"** → check `LLM_PROVIDER` and `LLM_API_KEY` in `.env`.
+- **Emails won't send** → check `GMAIL_ADDRESS` / `GMAIL_APP_PASSWORD` in `.env`.
+- **Website applying acts weird** → job sites change their pages often. Look at the screenshot saved in `state/` to see what the robot saw.
+- **A job needs a login** → redo Step 5 for that website.
+- **Start over safely** → every real run is preceded by `--dry-run`. Drafts cost nothing.
 
-## 10. Notes
-
-- The agents output **drafts** in dry-run mode. Review before any real run — you own the sends.
-- Never put secrets in `config/`; keys live only in `.env` (git-ignored).
-- Board sites change their markup; when an adapter misbehaves, open the screenshot in `state/` and update the selectors in `src/boards/<board>.py`.
-- Keep automation human-paced on boards you care about; aggressive use risks the account.
-- Built from a production job-hunt machine that runs these lanes daily; this repo is the portable, sanitized core — same pipeline, any model, any computer.
+Keys live only in `.env` (never uploaded to GitHub). Your personal details live only in `config/candidate.yaml` (never uploaded either).
